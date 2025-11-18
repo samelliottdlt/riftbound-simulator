@@ -9,9 +9,9 @@
  */
 
 import { GameState, PlayerState, getCard, getPlayer, updatePlayer } from '../types/gameState.js';
-import { Card, isUnit, isSpell, isGear, UnitCard, SpellCard, GearCard } from '../types/cards.js';
+import { Card, isUnit, isSpell, isGear } from '../types/cards.js';
 import { Result, ok, err, validationError } from '../types/result.js';
-import { CardId, PlayerId, Cost, Power, Domain, Energy, BattlefieldId, Phase } from '../types/primitives.js';
+import { CardId, PlayerId, Cost, Energy, BattlefieldId, Phase } from '../types/primitives.js';
 import { moveCard, getCardLocation } from './zoneManagement.js';
 import { Zone } from '../types/primitives.js';
 

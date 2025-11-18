@@ -9,7 +9,7 @@
 
 import { GameState, getPlayer, getBattlefield, updateBattlefield, getCard } from '../types/gameState.js';
 import { Result, ok, err, validationError } from '../types/result.js';
-import { PlayerId, BattlefieldId, UnitId } from '../types/primitives.js';
+import { PlayerId, BattlefieldId } from '../types/primitives.js';
 import { isUnit } from '../types/cards.js';
 
 /**
@@ -197,12 +197,8 @@ export function updateBattlefieldControl(
     return ok(state);
   }
 
-  // Count units per player at this battlefield
-  const unitsByPlayer = new Map<PlayerId, number>();
-  for (const unitId of battlefield.units) {
-    // TODO: Get unit owner from card
-    // For now, this is incomplete - we need card ownership tracking
-  }
+  // TODO: Count units per player at this battlefield
+  // For now, this is incomplete - we need card ownership tracking
 
   // Rule 181.4.c: If current controller has no units, they lose control
   if (battlefield.controller && battlefield.units.size === 0) {

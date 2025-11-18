@@ -196,7 +196,7 @@ export function executeChannelPhase(
 
   // Channel 2 runes (Rule 315.3.b)
   // If there are fewer than 2 runes in deck, channel as many as possible (Rule 315.3.b.1)
-  const channelResult = channelRunes(state, playerId, 2, false);
+  const channelResult = channelRunes(state, playerId, 2);
   if (!channelResult.ok) {
     return channelResult;
   }

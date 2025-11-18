@@ -5,6 +5,7 @@ A pure functional game state simulator for the Riftbound card game. This simulat
 ## Status: Phase 2 - Energy System Refactored to Rune-Based Resources
 
 The simulator has core game mechanics implemented with focus on canonical Riftbound rules:
+
 - ✅ Complete type system (13 keywords from core rules, 6 card types, all zones)
 - ✅ Zone management with 11 zones and privacy levels
 - ✅ Card playing mechanics with cost validation
@@ -23,6 +24,7 @@ The simulator has core game mechanics implemented with focus on canonical Riftbo
 - ✅ **193 tests passing across 15 test suites**
 
 ### Implemented Keywords (From Core Rules 716-733)
+
 - **Accelerate**: Pay additional cost to enter ready (Rule 721)
 - **Action**: Can be played during showdowns on any turn (Rule 722)
 - **Reaction**: Can be played during closed states on any turn (Rule 729)
@@ -46,6 +48,7 @@ GameState → derive PendingChoices → player chooses → resolveGameState → 
 ```
 
 Key principles:
+
 - **Pure functions**: Same input → same output, no side effects
 - **Immutable state**: Every operation returns a new GameState
 - **Choice-based**: Game never auto-resolves player decisions

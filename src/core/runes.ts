@@ -16,8 +16,8 @@
 
 import { GameState, getPlayer, updatePlayer, getCard } from '../types/gameState.js';
 import { Result, ok, err, validationError } from '../types/result.js';
-import { PlayerId, RuneId, Energy, Power, Domain, CardCategory, runeId, cardId } from '../types/primitives.js';
-import { RuneCard, Card } from '../types/cards.js';
+import { PlayerId, RuneId, Energy, Power, Domain, CardCategory, cardId } from '../types/primitives.js';
+import { RuneCard } from '../types/cards.js';
 
 /**
  * Basic Rune names corresponding to the six domains (Rule 157.1)
@@ -44,29 +44,12 @@ export function createBasicRune(domain: Domain, idSuffix: string): RuneCard {
     id: cardId(`rune-${domain.toLowerCase()}-${idSuffix}`) as RuneId,
     name,
     category: CardCategory.Rune,
-    domain,
+    owner: '' as any, // Will be set when added to player
+    domains: [domain],
     tags: [],
     supertypes: [],
-    abilities: [
-      {
-        id: `${name}-exhaust-ability`,
-        type: 'activated' as const,
-        cost: { exhaustSelf: true },
-        effect: { type: 'addEnergy', amount: 1 },
-        text: '[E]: Add [1]',
-      },
-      {
-        id: `${name}-recycle-ability`,
-        type: 'activated' as const,
-        cost: { recycleSelf: true },
-        effect: { type: 'addPower', domain },
-        text: `Recycle this: Add [${domain.charAt(0)}]`,
-      },
-    ],
+    abilities: [], // TODO: Implement rune abilities when ability system is complete
     rulesText: `[E]: Add [1]\nRecycle this: Add [${domain.charAt(0)}]`,
-    exhausted: false,
-    damaged: 0,
-    modifiers: [],
   };
 }
 
@@ -91,13 +74,11 @@ export function createRuneDeck(playerIdStr: string): RuneCard[] {
  * Takes runes from deck and puts them on the board
  * 
  * @param count - Number of runes to channel (typically 2 per turn)
- * @param exhausted - Whether channeled runes enter exhausted
  */
 export function channelRunes(
   state: GameState,
   playerId: PlayerId,
-  count: number,
-  exhausted: boolean = false
+  count: number
 ): Result<GameState> {
   const player = getPlayer(state, playerId);
   if (!player) {
@@ -118,20 +99,8 @@ export function channelRunes(
 
     runesChanneled.push(runeIdToChannel);
 
-    // Update rune to be exhausted if needed
-    if (exhausted) {
-      const updatedRune: Card = {
-        ...runeCard,
-        exhausted: true,
-      };
-      
-      const newCards = new Map(updatedState.cards);
-      newCards.set(runeIdToChannel as any, updatedRune);
-      updatedState = {
-        ...updatedState,
-        cards: newCards,
-      };
-    }
+    // TODO: Update rune to be exhausted if needed
+    // Note: Rune exhaustion system not yet implemented in card types
   }
 
   // Update player state: remove from runeDeck, add to runesInPlay
