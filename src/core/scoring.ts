@@ -11,8 +11,8 @@
  */
 
 import { Result, ok, err, validationError } from '../types/result.js';
+import type { GameState } from '../types/gameState.js';
 import type {
-  GameState,
   PlayerId,
   BattlefieldId,
   Points,

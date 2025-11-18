@@ -10,7 +10,6 @@
  */
 
 import { GameState, PlayerState, getCard, getPlayer, updatePlayer, updateBattlefield } from '../types/gameState.js';
-import { Card, isMainDeckCard } from '../types/cards.js';
 import { Result, ok, err, validationError } from '../types/result.js';
 import { CardId, PlayerId, Zone, PrivacyLevel } from '../types/primitives.js';
 
@@ -62,7 +61,7 @@ export function getCardLocation(state: GameState, cardId: CardId): Result<CardLo
     }
 
     // Check rune deck (ordered)
-    const runeDeckIndex = player.runeDeck.indexOf(cardId);
+    const runeDeckIndex = player.runeDeck.indexOf(cardId as any);
     if (runeDeckIndex !== -1) {
       return ok({ zone: Zone.RuneDeck, owner: playerId, position: runeDeckIndex });
     }
@@ -79,7 +78,7 @@ export function getCardLocation(state: GameState, cardId: CardId): Result<CardLo
   }
 
   // Check battlefields
-  for (const [battlefieldId, battlefield] of state.battlefields) {
+  for (const [, battlefield] of state.battlefields) {
     if (battlefield.units.has(cardId as any)) {
       return ok({ zone: Zone.Battlefield, owner: battlefield.controller! });
     }
@@ -193,7 +192,7 @@ function removeFromZone(
     case Zone.RuneDeck:
       newPlayer = {
         ...player,
-        runeDeck: player.runeDeck.filter(id => id !== cardId),
+        runeDeck: player.runeDeck.filter(id => id !== (cardId as any)),
       };
       break;
 
@@ -331,9 +330,9 @@ function addToZone(
     case Zone.RuneDeck:
       let newRuneDeck = [...player.runeDeck];
       if (position === 'top' || position === 0) {
-        newRuneDeck.unshift(cardId);
+        newRuneDeck.unshift(cardId as any);
       } else {
-        newRuneDeck.push(cardId);
+        newRuneDeck.push(cardId as any);
       }
       newPlayer = { ...player, runeDeck: newRuneDeck };
       break;

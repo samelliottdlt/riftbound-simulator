@@ -15,10 +15,9 @@ import {
   resolveAbility,
   Effect,
   EffectType,
-  TargetFilter,
 } from '../types/abilities.js';
-import { CardId, PlayerId, Keyword, UnitId } from '../types/primitives.js';
-import { Card, isUnit } from '../types/cards.js';
+import { CardId, PlayerId, Keyword } from '../types/primitives.js';
+import { isUnit } from '../types/cards.js';
 
 /**
  * Triggered Ability Instance - represents an ability that has triggered
