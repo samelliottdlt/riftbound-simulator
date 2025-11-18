@@ -1,0 +1,47 @@
+{
+  "name": "riftbound-simulator",
+  "version": "0.1.0",
+  "description": "Pure functional game state simulator for Riftbound card game",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "homepage": "https://github.com/samelliottdlt/riftbound-simulator#readme",
+  "bugs": {
+    "url": "https://github.com/samelliottdlt/riftbound-simulator/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samelliottdlt/riftbound-simulator.git"
+  },
+  "license": "MIT",
+  "author": "Sam Elliott De La Torre Babá",
+  "scripts": {
+    "dev": "vitest",
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "keywords": [
+    "riftbound",
+    "card-game",
+    "simulator",
+    "game-engine"
+  ],
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/seedrandom": "^3.0.8",
+    "@vitest/coverage-v8": "^2.1.8",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "dependencies": {
+    "seedrandom": "^3.0.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
