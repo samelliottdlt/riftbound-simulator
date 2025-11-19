@@ -3,9 +3,11 @@
  * 
  * Handles triggered, activated, and passive abilities with proper queuing
  * and resolution order (Rule 600-series).
+ * 
+ * Rule 376.3: Triggered abilities are placed on the Chain like Activated Abilities
  */
 
-import { GameState, updatePlayer } from '../types/gameState.js';
+import { GameState, updatePlayer, ChainItem } from '../types/gameState.js';
 import { Result, validationError } from '../types/result.js';
 import {
   Ability,
@@ -18,6 +20,8 @@ import {
 } from '../types/abilities.js';
 import { CardId, PlayerId, Keyword } from '../types/primitives.js';
 import { isUnit } from '../types/cards.js';
+import { addToChain } from './chain.js';
+import { performCleanup } from './cleanup.js';
 
 /**
  * Triggered Ability Instance - represents an ability that has triggered
@@ -204,7 +208,17 @@ export function resolveAllQueuedAbilities(state: GameState): Result<GameState> {
 }
 
 /**
- * Trigger abilities and queue them for resolution
+ * Trigger abilities and add them to the Chain
+ * 
+ * Rule 376.3: When a Condition is met, a Triggered Ability behaves like
+ * an Activated Ability and is placed on the Chain.
+ * 
+ * Rule 376.3.b: If multiple abilities trigger simultaneously, controller
+ * selects the order to place them on the Chain.
+ * 
+ * Rule 376.3.b.1: If multiple players control triggered abilities, starting
+ * with Turn Player and proceeding in Turn Order, each player orders their
+ * abilities on the Chain.
  * 
  * This is the main entry point for triggering abilities during gameplay
  */
@@ -215,9 +229,65 @@ export function triggerAbilities(
 ): GameState {
   // Check for triggered abilities
   const instances = checkTriggeredAbilities(state, trigger, context);
-
-  // Queue them
-  return queueTriggeredAbilities(state, instances);
+  
+  if (instances.length === 0) {
+    return state; // No abilities triggered
+  }
+  
+  // Group by controller
+  const abilityMap = new Map<PlayerId, TriggeredAbilityInstance[]>();
+  for (const instance of instances) {
+    const existing = abilityMap.get(instance.controller) || [];
+    existing.push(instance);
+    abilityMap.set(instance.controller, existing);
+  }
+  
+  // Add to Chain in APNAP order (Active Player, Non-Active Player)
+  // Rule 376.3.b.1: Turn Player first, then in turn order
+  const turnPlayer = state.turnState.turnPlayer;
+  const playerOrder: PlayerId[] = [];
+  
+  // Turn player goes first
+  if (abilityMap.has(turnPlayer)) {
+    playerOrder.push(turnPlayer);
+  }
+  
+  // Other players in turn order
+  for (const [playerId] of state.players) {
+    if (playerId !== turnPlayer && abilityMap.has(playerId)) {
+      playerOrder.push(playerId);
+    }
+  }
+  
+  // Add each player's abilities to Chain
+  let currentState = state;
+  for (const playerId of playerOrder) {
+    const abilities = abilityMap.get(playerId) || [];
+    
+    // Each ability becomes a Chain item
+    for (const instance of abilities) {
+      const chainItem: Omit<ChainItem, 'pending'> = {
+        id: instance.id,
+        type: 'ability',
+        source: instance.source,
+        controller: instance.controller,
+      };
+      
+      const addResult = addToChain(currentState, chainItem);
+      if (addResult.ok) {
+        currentState = addResult.value;
+      }
+    }
+  }
+  
+  // Rule 319.1: Cleanup after transitioning to Closed State
+  // This will finalize the Pending abilities per Rule 322.8
+  const cleanupResult = performCleanup(currentState);
+  if (cleanupResult.ok) {
+    currentState = cleanupResult.value;
+  }
+  
+  return currentState;
 }
 
 /**

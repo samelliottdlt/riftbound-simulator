@@ -4,16 +4,15 @@
  * Utilities for creating test game states and scenarios
  */
 
-import { GameState, PlayerState } from '../../src/types/gameState.js';
+import { GameState, PlayerState, BattlefieldState } from '../../src/types/gameState.js';
 import { Card } from '../../src/types/cards.js';
-import { PlayerId, CardId, UnitId, Phase, LegendId, legendId, Points, VictoryScore } from '../../src/types/primitives.js';
+import { PlayerId, CardId, UnitId, Phase, LegendId, legendId, Points, VictoryScore, TurnStateType, ChainStateType, BattlefieldId } from '../../src/types/primitives.js';
 import { RNG, SeededRNG } from '../../src/utils/rng.js';
 
 /**
  * Create a minimal PlayerState for testing
  */
 export function createMinimalPlayer(
-  id: PlayerId,
   options: {
     hand?: CardId[];
     deck?: CardId[];
@@ -60,17 +59,22 @@ export function createMinimalGameState(options: {
       phase: options.phase ?? Phase.Awaken,
       turnPlayer: options.turnPlayer,
       turnNumber: 1,
+      stateType: TurnStateType.Neutral,       // Default to Neutral State
+      chainState: ChainStateType.Open,        // Default to Open State
       priority: null,
+      activePlayer: null,
+      focus: null,
     },
     combatState: {
       active: false,
+      battlefield: null,
+      attackingPlayer: null,
+      defendingPlayer: null,
       attackers: new Set<UnitId>(),
       defenders: new Set<UnitId>(),
-      battlefield: null,
       damageAssignments: new Map<UnitId, Map<UnitId, number>>(),
     },
     chainState: {
-      active: false,
       items: [],
     },
     rng: options.rng ?? new SeededRNG('test-seed'),
@@ -79,6 +83,32 @@ export function createMinimalGameState(options: {
       startTime: new Date(),
       mode: 'test',
     },
+  };
+}
+
+/**
+ * Create a minimal BattlefieldState for testing
+ */
+export function createMinimalBattlefield(
+  id: BattlefieldId,
+  options: {
+    controller?: PlayerId | null;
+    units?: UnitId[];
+    contested?: boolean;
+    showdownStaged?: boolean;
+    combatStaged?: boolean;
+    contestedBy?: PlayerId;
+  } = {}
+): BattlefieldState {
+  return {
+    id,
+    controller: options.controller ?? null,
+    units: new Set(options.units ?? []),
+    facedownCard: null,
+    contested: options.contested ?? false,
+    showdownStaged: options.showdownStaged ?? false,
+    combatStaged: options.combatStaged ?? false,
+    contestedBy: options.contestedBy,
   };
 }
 
@@ -105,7 +135,7 @@ export function createTwoPlayerGameState(
   const players = new Map<PlayerId, PlayerState>();
   players.set(
     options.turnPlayer,
-    createMinimalPlayer(options.turnPlayer, {
+    createMinimalPlayer({
       hand: options.p1Hand,
       deck: options.p1Deck,
     })
@@ -115,7 +145,7 @@ export function createTwoPlayerGameState(
   const p2Id = options.turnPlayer === 'p1' ? 'p2' : 'p1';
   players.set(
     p2Id as PlayerId,
-    createMinimalPlayer(p2Id as PlayerId, {
+    createMinimalPlayer({
       hand: options.p2Hand,
       deck: options.p2Deck,
     })

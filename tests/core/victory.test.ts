@@ -7,10 +7,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createMinimalPlayer, createMinimalGameState } from '../utils/testHelpers.js';
 import {
-  PlayerId,
   playerId,
   battlefieldId,
-  BattlefieldId,
   Points,
   VictoryScore,
 } from '../../src/types/primitives.js';
@@ -41,8 +39,8 @@ describe('Points Management', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
-    players.set(p2, createMinimalPlayer(p2));
+    players.set(p1, createMinimalPlayer());
+    players.set(p2, createMinimalPlayer());
     state = createMinimalGameState({ players, turnPlayer: p1 });
   });
 
@@ -92,8 +90,8 @@ describe('Win Conditions', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
-    players.set(p2, createMinimalPlayer(p2));
+    players.set(p1, createMinimalPlayer());
+    players.set(p2, createMinimalPlayer());
     state = createMinimalGameState({ players, turnPlayer: p1 });
     state.victoryScore = 8 as VictoryScore;
   });
@@ -160,7 +158,7 @@ describe('Final Point Detection', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
+    players.set(p1, createMinimalPlayer());
     state = createMinimalGameState({ players, turnPlayer: p1 });
     state.victoryScore = 8 as VictoryScore;
   });
@@ -205,7 +203,7 @@ describe('Battlefield Scoring Tracking', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
+    players.set(p1, createMinimalPlayer());
     state = createMinimalGameState({ players, turnPlayer: p1 });
   });
 

@@ -46,6 +46,7 @@ export function advanceToNextTurn(state: GameState): Result<GameState> {
   return ok({
     ...state,
     turnState: {
+      ...state.turnState,
       phase: Phase.Awaken,
       turnPlayer: nextPlayer as any,
       turnNumber: state.turnState.turnNumber + 1,

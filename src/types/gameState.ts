@@ -50,45 +50,62 @@ export interface BattlefieldState {
   units: Set<UnitId>;                // Units at this battlefield
   facedownCard: CardId | null;       // Card in facedown zone (max 1)
   contested: boolean;                // Temporary status when control is challenged (Rule 181.3)
+  
+  // Staging flags for Cleanup steps 6-7 (Rules 322.6-322.7)
+  showdownStaged: boolean;           // Showdown staged at this battlefield (Rule 322.6)
+  combatStaged: boolean;             // Combat staged at this battlefield (Rule 322.7)
+  contestedBy?: PlayerId;            // Who applied Contested status (for Combat attacker)
 }
 
 /**
- * Turn state - tracks current phase and active player
+ * Turn state - tracks current phase, active player, and state (Rules 307-313)
  */
 export interface TurnState {
   phase: Phase;
   turnPlayer: PlayerId;
   turnNumber: number;                // Total turns elapsed
-  priority: PlayerId | null;         // Who has priority (for chains)
+  
+  // State tracking (Rules 307-310)
+  stateType: import('./primitives.js').TurnStateType;    // Neutral or Showdown (Rule 308)
+  chainState: import('./primitives.js').ChainStateType;  // Open or Closed (Rule 310)
+  
+  // Priority and Focus (Rules 312-313)
+  priority: PlayerId | null;         // Who has priority (for chains) (Rule 312)
+  activePlayer: PlayerId | null;     // Who is active during chain resolution (Rule 332.1)
+  focus: PlayerId | null;            // Who has focus during showdowns (Rule 313)
 }
 
 /**
- * Combat state - tracks active combat
+ * Combat state - tracks active combat (Rules 433-440)
  */
 export interface CombatState {
   active: boolean;
-  attackers: Set<UnitId>;
-  defenders: Set<UnitId>;
   battlefield: BattlefieldId | null;  // Where combat is happening
+  attackingPlayer: PlayerId | null;   // Who is attacking
+  defendingPlayer: PlayerId | null;   // Who is defending
+  attackers: Set<UnitId>;             // Units with Attacker designation
+  defenders: Set<UnitId>;             // Units with Defender designation
   damageAssignments: Map<UnitId, Map<UnitId, number>>; // Attacker -> Defender -> Damage
 }
 
 /**
- * Chain state - tracks abilities/spells on the chain
+ * Chain state - tracks abilities/spells on the chain (Rules 327-336)
  */
 export interface ChainState {
-  active: boolean;
-  items: ChainItem[];                // Ordered, resolves last-in-first-out
+  items: ChainItem[];                // Ordered, resolves last-in-first-out (Rule 336.1)
 }
 
 /**
- * Chain Item - spell or ability on the chain
+ * Chain Item - spell or ability on the chain (Rule 328)
+ * Items are Pending until finalized (Rule 328.2-328.3)
  */
 export interface ChainItem {
   id: string;
   type: 'spell' | 'ability';
   source: CardId;
   controller: PlayerId;
+  pending: boolean;                  // Pending until "Check Legality" step (Rule 328.2)
+  targetIds?: CardId[];              // Targets chosen during play (Rule 352)
 }
 
 /**

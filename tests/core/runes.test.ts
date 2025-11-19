@@ -30,7 +30,6 @@ import {
 import { GameState, getPlayer, updatePlayer } from '../../src/types/gameState.js';
 import { createMinimalPlayer, createMinimalGameState } from '../utils/testHelpers.js';
 import {
-  PlayerId,
   playerId,
   Domain,
   Energy,
@@ -75,8 +74,8 @@ describe('Channeling Runes', () => {
 
   beforeEach(() => {
     const players = new Map();
-    const player1 = createMinimalPlayer(p1);
-    const player2 = createMinimalPlayer(p2);
+    const player1 = createMinimalPlayer();
+    const player2 = createMinimalPlayer();
     
     // Create rune decks for both players
     const runeDeck1 = createRuneDeck('p1');
@@ -177,7 +176,7 @@ describe('Rune Pool - Energy', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
+    players.set(p1, createMinimalPlayer());
     state = createMinimalGameState({ players, turnPlayer: p1 });
   });
 
@@ -273,7 +272,7 @@ describe('Rune Pool - Power', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
+    players.set(p1, createMinimalPlayer());
     state = createMinimalGameState({ players, turnPlayer: p1 });
   });
 
@@ -382,7 +381,7 @@ describe('Rune Pool Emptying', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
+    players.set(p1, createMinimalPlayer());
     state = createMinimalGameState({ players, turnPlayer: p1 });
   });
 
@@ -435,7 +434,7 @@ describe('Rune Recycling', () => {
 
   beforeEach(() => {
     const players = new Map();
-    const player1 = createMinimalPlayer(p1);
+    const player1 = createMinimalPlayer();
     const runeDeck = createRuneDeck('p1');
     
     players.set(p1, {
@@ -490,7 +489,7 @@ describe('Energy and Power Independence', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
+    players.set(p1, createMinimalPlayer());
     state = createMinimalGameState({ players, turnPlayer: p1 });
   });
 

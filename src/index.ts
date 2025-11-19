@@ -7,6 +7,31 @@
 // Core resolver
 export { resolveGameState, getPendingChoices, autoResolve } from './core/resolver.js';
 
+// Cleanup system (Rules 318-323)
+export { performCleanup, shouldPerformCleanup } from './core/cleanup.js';
+
+// Chain system (Rules 326-336)
+export {
+  addToChain,
+  finalizeChainItems,
+  getChainExecuteChoices,
+  passPriority,
+  resolveTopChainItem,
+  resolveChain,
+  chainExists,
+  isClosedState,
+  isOpenState,
+} from './core/chain.js';
+
+// Exhaustion system (Rules 401-402)
+export {
+  exhaustPermanent,
+  readyPermanent,
+  readyAllPermanents,
+  isExhausted,
+  isReady,
+} from './core/exhaustion.js';
+
 // Ability system
 export {
   initializeAbilitySystem,
@@ -38,7 +63,7 @@ export type {
 } from './core/abilityResolution.js';
 
 // Types
-export type { GameState, PlayerState, TurnState } from './types/gameState.js';
+export type { GameState, PlayerState, TurnState, BattlefieldState, CombatState, ChainState, ChainItem } from './types/gameState.js';
 export type {
   Card,
   BaseCard,
@@ -54,7 +79,7 @@ export type {
 export type { PendingChoice, PlayerChoice, DrawChoice, EndTurnChoice } from './types/choices.js';
 export type { Result, ValidationError, SuggestedFix } from './types/result.js';
 export type { PlayerId, CardId, UnitId, GearId, RuneId, BattlefieldId, LegendId, AbilityId, TokenId, Power, Cost, Tag } from './types/primitives.js';
-export { Domain, CardCategory, Supertype, Phase, Zone, PrivacyLevel, Keyword, CombatDesignation, GameStateStatus } from './types/primitives.js';
+export { Domain, CardCategory, Supertype, Phase, Zone, PrivacyLevel, Keyword, CombatDesignation, GameStateStatus, TurnStateType, ChainStateType } from './types/primitives.js';
 export { playerId, cardId, unitId, gearId, runeId, battlefieldId, legendId, abilityId, tokenId } from './types/primitives.js';
 
 // Ability types
@@ -82,7 +107,7 @@ export type { RNG } from './utils/rng.js';
 export { SeededRNG, OverrideRNG, RandomRNG } from './utils/rng.js';
 
 // Helpers
-export { getCard, getPlayer, updateCard, updatePlayer } from './types/gameState.js';
+export { getCard, getPlayer, getBattlefield, updateCard, updatePlayer, updateBattlefield } from './types/gameState.js';
 export {
   createCard,
   createUnit,

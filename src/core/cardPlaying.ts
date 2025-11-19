@@ -8,12 +8,14 @@
  * - Play restrictions (timing, location)
  */
 
-import { GameState, PlayerState, getCard, getPlayer, updatePlayer } from '../types/gameState.js';
+import { GameState, PlayerState, getCard, getPlayer, updatePlayer, updateCard, ChainItem } from '../types/gameState.js';
 import { Card, isUnit, isSpell, isGear } from '../types/cards.js';
 import { Result, ok, err, validationError } from '../types/result.js';
-import { CardId, PlayerId, Cost, Energy, BattlefieldId, Phase } from '../types/primitives.js';
+import { CardId, PlayerId, Cost, Energy, BattlefieldId, Phase, Keyword } from '../types/primitives.js';
 import { moveCard, getCardLocation } from './zoneManagement.js';
 import { Zone } from '../types/primitives.js';
+import { addToChain } from './chain.js';
+import { performCleanup } from './cleanup.js';
 
 /**
  * Calculate effective cost of a card accounting for cost reductions
@@ -234,7 +236,20 @@ export function playUnit(
     newState = updatePlayer(newState, playerId, newPlayer);
   }
 
-  // TODO: Unit enters exhausted (summoning sickness) unless it has Accelerate
+  // Unit enters exhausted (Rule 140.4) unless it has Accelerate (Rule 721.6)
+  const updatedCard = getCard(newState, cardId);
+  if (updatedCard && isUnit(updatedCard)) {
+    const hasAccelerate = updatedCard.keywords.includes(Keyword.Accelerate);
+    if (!hasAccelerate) {
+      // Unit enters exhausted (summoning sickness)
+      const exhaustedCard = {
+        ...updatedCard,
+        exhausted: true,
+      };
+      newState = updateCard(newState, exhaustedCard);
+    }
+  }
+
   // TODO: Trigger OnPlay abilities
   // TODO: Open chain for responses
 
@@ -242,12 +257,24 @@ export function playUnit(
 }
 
 /**
- * Play a spell card
+ * Play a spell card (Rules 346-356)
+ * 
+ * Process:
+ * 1. Remove from zone and add to Chain as Pending (Rule 351)
+ * 2. Make necessary choices (targets, etc.) (Rule 352)
+ * 3. Determine total cost (Rule 353)
+ * 4. Pay costs (Rule 354)
+ * 5. Check legality - becomes Finalized (Rule 355)
+ * 6. OnPlay triggers (Rule 356)
+ * 
+ * Note: The spell will be resolved when the Chain resolves.
+ * After resolution, it moves to trash (Rule 336).
  */
 export function playSpell(
   state: GameState,
   cardId: CardId,
-  playerId: PlayerId
+  playerId: PlayerId,
+  targetIds?: CardId[]  // Targets chosen (Rule 352)
 ): Result<GameState> {
   const card = getCard(state, cardId);
   if (!card || !isSpell(card)) {
@@ -271,8 +298,10 @@ export function playSpell(
     ));
   }
 
-  // Pay cost (using effective cost)
+  // Rule 353: Determine total cost (using effective cost)
   const effectiveCost = calculateEffectiveCost(state, card, playerId);
+  
+  // Rule 354: Pay costs
   const payCostResult = payCost(state, playerId, effectiveCost);
   if (!payCostResult.ok) {
     return payCostResult;
@@ -289,16 +318,36 @@ export function playSpell(
     newState = updatePlayer(newState, playerId, newPlayer);
   }
 
-  // TODO: Put spell on chain for resolution
-  // TODO: After resolution, move to trash
-
-  // For now, just move to trash immediately (simplified)
-  const moveResult = moveCard(newState, cardId, Zone.Trash, playerId);
-  if (!moveResult.ok) {
-    return moveResult;
+  // Rule 351: Put spell on Chain as Pending Item
+  // The spell is added to the Chain and will be resolved through
+  // the 4-step Chain Resolution process (Rules 331-336)
+  const chainItem: Omit<ChainItem, 'pending'> = {
+    id: `spell-${cardId}-${Date.now()}`,
+    type: 'spell',
+    source: cardId,
+    controller: playerId,
+    targetIds: targetIds || [],
+  };
+  
+  const addToChainResult = addToChain(newState, chainItem);
+  if (!addToChainResult.ok) {
+    return addToChainResult;
   }
+  newState = addToChainResult.value;
 
-  return ok(moveResult.value);
+  // Rule 319.1: Cleanup after transitioning to Closed State
+  // This will finalize the Pending item per Rule 322.8
+  const cleanupResult = performCleanup(newState);
+  if (!cleanupResult.ok) {
+    return cleanupResult;
+  }
+  newState = cleanupResult.value;
+
+  // TODO: Rule 355 - Check legality (currently happens during finalize)
+  // TODO: Rule 356 - OnPlay triggers
+  // TODO: After Chain resolution, spell moves to trash (Rule 336)
+
+  return ok(newState);
 }
 
 /**

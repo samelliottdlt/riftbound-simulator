@@ -12,6 +12,7 @@
 import { GameState, PlayerState, getCard, getPlayer, updatePlayer, updateBattlefield } from '../types/gameState.js';
 import { Result, ok, err, validationError } from '../types/result.js';
 import { CardId, PlayerId, Zone, PrivacyLevel } from '../types/primitives.js';
+import { performCleanup } from './cleanup.js';
 
 /**
  * Card location - where a card currently is
@@ -407,6 +408,19 @@ export function moveCard(
     return addResult;
   }
   newState = addResult.value;
+
+  // Rule 319.5: Cleanup after Game Objects enter or leave the Board
+  const fromBoard = isOnBoard(currentLocation.zone);
+  const toBoard = isOnBoard(toZone);
+  
+  if (fromBoard || toBoard) {
+    // Card entered or left the board - trigger Cleanup
+    const cleanupResult = performCleanup(newState);
+    if (!cleanupResult.ok) {
+      return cleanupResult;
+    }
+    newState = cleanupResult.value;
+  }
 
   // TODO: Clear temporary modifications if zone change requires it
   // TODO: Trigger zone-change abilities (OnLeavePlay, OnEnterPlay, etc.)

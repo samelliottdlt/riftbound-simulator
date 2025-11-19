@@ -21,15 +21,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "tsc --noEmit",
+    "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "clean": "rimraf dist"
   },
-  "keywords": [
-    "riftbound",
-    "card-game",
-    "simulator",
-    "game-engine"
-  ],
   "devDependencies": {
     "@types/node": "^22.10.1",
     "@types/seedrandom": "^3.0.8",

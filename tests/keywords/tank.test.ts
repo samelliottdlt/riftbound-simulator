@@ -12,11 +12,11 @@ import {
 import { GameState, getPlayer, updatePlayer, getCard } from '../../src/types/gameState.js';
 import { createMinimalPlayer, createMinimalGameState } from '../utils/testHelpers.js';
 import {
-  PlayerId,
   Phase,
   Energy,
   playerId,
   cardId,
+  UnitId,
   CardCategory,
   Domain,
   Keyword,
@@ -32,8 +32,8 @@ describe('Tank Keyword (Rule 731)', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
-    players.set(p2, createMinimalPlayer(p2));
+    players.set(p1, createMinimalPlayer());
+    players.set(p2, createMinimalPlayer());
     state = createMinimalGameState({ players, turnPlayer: p1, phase: Phase.Combat });
   });
 
@@ -92,16 +92,16 @@ describe('Tank Keyword (Rule 731)', () => {
 
     const p1Player = getPlayer(state, p1)!;
     const p2Player = getPlayer(state, p2)!;
-    state = updatePlayer(state, p1, { ...p1Player, base: new Set([attacker.id as any]) });
-    state = updatePlayer(state, p2, { ...p2Player, base: new Set([tankDefender.id as any, normalDefender.id as any]) });
+    state = updatePlayer(state, p1, { ...p1Player, base: new Set([attacker.id] as UnitId[]) });
+    state = updatePlayer(state, p2, { ...p2Player, base: new Set([tankDefender.id, normalDefender.id] as UnitId[]) });
 
     // Combat: attacker (5 might) vs tank (3 might) + normal (2 might)
     // Tank must receive 3 damage first (lethal), then normal receives 2 damage (lethal)
-    const assignments = new Map();
-    assignments.set(tankDefender.id as any, attacker.id as any);
-    assignments.set(normalDefender.id as any, attacker.id as any);
+    const assignments = new Map<UnitId, UnitId>();
+    assignments.set(tankDefender.id as UnitId, attacker.id as UnitId);
+    assignments.set(normalDefender.id as UnitId, attacker.id as UnitId);
     
-    const result = quickCombat(state, p1, [attacker.id as any], assignments);
+    const result = quickCombat(state, p1, [attacker.id as UnitId], assignments);
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -124,8 +124,8 @@ describe('Tank Keyword (Rule 731)', () => {
       const normalCard = getCard(result.value, normalDefender.id);
       
       // Both should have lethal damage before being killed
-      if (tankCard) expect(tankCard.damage ?? 0).toBeGreaterThanOrEqual(3);
-      if (normalCard) expect(normalCard.damage ?? 0).toBeGreaterThanOrEqual(2);
+      if (tankCard && tankCard.category === CardCategory.Unit) expect(tankCard.damage ?? 0).toBeGreaterThanOrEqual(3);
+      if (normalCard && normalCard.category === CardCategory.Unit) expect(normalCard.damage ?? 0).toBeGreaterThanOrEqual(2);
     }
   });
 
@@ -184,16 +184,16 @@ describe('Tank Keyword (Rule 731)', () => {
 
     const p1Player = getPlayer(state, p1)!;
     const p2Player = getPlayer(state, p2)!;
-    state = updatePlayer(state, p1, { ...p1Player, base: new Set([attacker.id as any]) });
-    state = updatePlayer(state, p2, { ...p2Player, base: new Set([tankDefender.id as any, normalDefender.id as any]) });
+    state = updatePlayer(state, p1, { ...p1Player, base: new Set([attacker.id] as UnitId[]) });
+    state = updatePlayer(state, p2, { ...p2Player, base: new Set([tankDefender.id, normalDefender.id] as UnitId[]) });
 
     // Combat: attacker (2 might) vs tank (3 might) + normal (2 might)
-    // Tank must receive all 2 damage (not lethal), normal receives 0
-    const assignments = new Map();
-    assignments.set(tankDefender.id as any, attacker.id as any);
-    assignments.set(normalDefender.id as any, attacker.id as any);
+    // Tank must receive all 2 damage (not lethal), normal gets none
+    const assignments = new Map<UnitId, UnitId>();
+    assignments.set(tankDefender.id as UnitId, attacker.id as UnitId);
+    assignments.set(normalDefender.id as UnitId, attacker.id as UnitId);
     
-    const result = quickCombat(state, p1, [attacker.id as any], assignments);
+    const result = quickCombat(state, p1, [attacker.id as UnitId], assignments);
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -215,8 +215,14 @@ describe('Tank Keyword (Rule 731)', () => {
       const tankCard = getCard(result.value, tankDefender.id);
       const normalCard = getCard(result.value, normalDefender.id);
       
-      expect(tankCard?.damage ?? 0).toBe(2); // Tank took all 2 damage
-      expect(normalCard?.damage ?? 0).toBe(0); // Normal took no damage
+      expect(tankCard?.category).toBe(CardCategory.Unit);
+      expect(normalCard?.category).toBe(CardCategory.Unit);
+      if (tankCard && tankCard.category === CardCategory.Unit) {
+        expect(tankCard.damage ?? 0).toBe(2); // Tank took all 2 damage
+      }
+      if (normalCard && normalCard.category === CardCategory.Unit) {
+        expect(normalCard.damage ?? 0).toBe(0); // Normal took no damage
+      }
     }
   });
 
@@ -292,20 +298,20 @@ describe('Tank Keyword (Rule 731)', () => {
 
     const p1Player = getPlayer(state, p1)!;
     const p2Player = getPlayer(state, p2)!;
-    state = updatePlayer(state, p1, { ...p1Player, base: new Set([attacker.id as any]) });
+    state = updatePlayer(state, p1, { ...p1Player, base: new Set([attacker.id] as UnitId[]) });
     state = updatePlayer(state, p2, { 
       ...p2Player, 
-      base: new Set([tank1.id as any, tank2.id as any, normalDefender.id as any]) 
+      base: new Set([tank1.id, tank2.id, normalDefender.id] as UnitId[]) 
     });
 
     // Combat: attacker (5 might) vs tank1 (2) + tank2 (2) + normal (1)
     // Both tanks must get lethal (2 each = 4 total), then normal gets 1 (lethal)
-    const assignments = new Map();
-    assignments.set(tank1.id as any, attacker.id as any);
-    assignments.set(tank2.id as any, attacker.id as any);
-    assignments.set(normalDefender.id as any, attacker.id as any);
+    const assignments = new Map<UnitId, UnitId>();
+    assignments.set(tank1.id as UnitId, attacker.id as UnitId);
+    assignments.set(tank2.id as UnitId, attacker.id as UnitId);
+    assignments.set(normalDefender.id as UnitId, attacker.id as UnitId);
     
-    const result = quickCombat(state, p1, [attacker.id as any], assignments);
+    const result = quickCombat(state, p1, [attacker.id as UnitId], assignments);
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -386,19 +392,19 @@ describe('Tank Keyword (Rule 731)', () => {
 
     const p1Player = getPlayer(state, p1)!;
     const p2Player = getPlayer(state, p2)!;
-    state = updatePlayer(state, p1, { ...p1Player, base: new Set([attacker.id as any]) });
+    state = updatePlayer(state, p1, { ...p1Player, base: new Set([attacker.id] as UnitId[]) });
     state = updatePlayer(state, p2, { 
       ...p2Player, 
-      base: new Set([tankDefender.id as any, normalDefender.id as any]) 
+      base: new Set([tankDefender.id, normalDefender.id] as UnitId[]) 
     });
 
     // Combat: attacker (3 might) vs damaged tank (4 might, 2 damage) + normal (1 might)
     // Tank needs 2 more damage to kill, so it gets 2, normal gets remaining 1 (lethal)
-    const assignments = new Map();
-    assignments.set(tankDefender.id as any, attacker.id as any);
-    assignments.set(normalDefender.id as any, attacker.id as any);
+    const assignments = new Map<UnitId, UnitId>();
+    assignments.set(tankDefender.id as UnitId, attacker.id as UnitId);
+    assignments.set(normalDefender.id as UnitId, attacker.id as UnitId);
     
-    const result = quickCombat(state, p1, [attacker.id as any], assignments);
+    const result = quickCombat(state, p1, [attacker.id as UnitId], assignments);
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -456,15 +462,15 @@ describe('Tank Keyword (Rule 731)', () => {
 
     const p1Player = getPlayer(state, p1)!;
     const p2Player = getPlayer(state, p2)!;
-    state = updatePlayer(state, p1, { ...p1Player, base: new Set([attacker.id as any]) });
-    state = updatePlayer(state, p2, { ...p2Player, base: new Set([tankDefender.id as any]) });
+    state = updatePlayer(state, p1, { ...p1Player, base: new Set([attacker.id] as UnitId[]) });
+    state = updatePlayer(state, p2, { ...p2Player, base: new Set([tankDefender.id] as UnitId[]) });
 
     // Combat: attacker (10 might) vs tank (2 might)
     // Tank gets 2 damage (lethal), excess 8 damage also assigned to tank
-    const assignments = new Map();
-    assignments.set(tankDefender.id as any, attacker.id as any);
+    const assignments = new Map<UnitId, UnitId>();
+    assignments.set(tankDefender.id as UnitId, attacker.id as UnitId);
     
-    const result = quickCombat(state, p1, [attacker.id as any], assignments);
+    const result = quickCombat(state, p1, [attacker.id as UnitId], assignments);
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -477,7 +483,7 @@ describe('Tank Keyword (Rule 731)', () => {
 
       // Verify tank received way more damage than needed
       const tankCard = getCard(result.value, tankDefender.id);
-      if (tankCard) {
+      if (tankCard && tankCard.category === CardCategory.Unit) {
         expect(tankCard.damage ?? 0).toBe(10); // All damage went to tank
       }
     }

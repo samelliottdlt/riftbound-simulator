@@ -390,6 +390,8 @@ export function resolveCombatDamage(
       attackers: new Set(),
       defenders: new Set(),
       battlefield: null,
+      attackingPlayer: null,
+      defendingPlayer: null,
       damageAssignments: new Map<UnitId, Map<UnitId, number>>(),
     },
   };

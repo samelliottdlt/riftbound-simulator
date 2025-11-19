@@ -8,7 +8,7 @@
 - **Language**: TypeScript (ES2022, strict mode)
 - **Runtime**: Node.js ≥18.0.0
 - **Type**: Pure functional library with immutable state
-- **Size**: ~13 TypeScript modules, 194 passing tests across 15 test suites
+- **Size**: ~15 TypeScript modules (core/), 251 passing tests across 18 test suites
 - **Dependencies**: Minimal (seedrandom for deterministic RNG)
 - **Architecture**: Pure functions only - same input → same output, no side effects
 
@@ -64,7 +64,7 @@ src/
 │   ├── result.ts                # Result<T, E>, ok(), err(), validation helpers
 │   ├── choices.ts               # PendingChoice, PlayerChoice
 │   └── abilities.ts             # Ability system types
-├── core/                     # Game logic (12 files)
+├── core/                     # Game logic (15 files)
 │   ├── resolver.ts              # Main game loop: resolveGameState()
 │   ├── turnStructure.ts         # Turn phases (Awaken → Channel → Draw → Action → Ending)
 │   ├── cardPlaying.ts           # Playing cards, cost validation
@@ -76,7 +76,10 @@ src/
 │   ├── victory.ts               # Victory conditions
 │   ├── zoneManagement.ts        # Moving cards between zones
 │   ├── abilityResolution.ts     # Ability queue and resolution
-│   └── triggeredAbilities.ts    # OnPlay, OnDeath, OnScore triggers
+│   ├── triggeredAbilities.ts    # OnPlay, OnDeath, OnScore triggers
+│   ├── chain.ts                 # Chain system for spell/ability resolution
+│   ├── cleanup.ts               # 10-step Cleanup procedure
+│   └── exhaustion.ts            # Exhaustion/Ready system (Rules 401-402)
 ├── choices/                  # Choice derivation
 │   └── deriveChoices.ts         # Determines available player choices
 ├── rules/actions/            # Specific game actions
@@ -85,15 +88,12 @@ src/
 └── utils/
     └── rng.ts                   # RNG abstraction (SeededRNG, OverrideRNG, RandomRNG)
 
-tests/
-└── integration/              # 15 test suites, 194 tests
-    ├── verticalSlice.test.ts    # Basic turn cycle
-    ├── turnStructure.test.ts    # Full turn phases
-    ├── combat.test.ts           # Combat mechanics
-    ├── runes.test.ts            # Rune system (24 tests)
-    ├── scoring.test.ts          # Conquer/Hold scoring
-    └── ... (11 more test suites)
+tests/                        # Directory containing all tests organized by functionality
+
 ```
+
+** If you need to find something, use this as a guide but it is recommended to search the codebase directly. These instructions are a summary only. **
+** If a file is added or removed, update these instructions accordingly. **
 
 ### Key Files
 
@@ -147,9 +147,7 @@ describe('Feature Name', () => {
     
     // 3. Validate result
     expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.value.players.get(p1)?.hand).toHaveLength(1);
-    }
+    expect(unwrap(result).players.get(p1)?.hand).toHaveLength(1);
   });
 });
 ```
@@ -167,7 +165,7 @@ npm run test:coverage
 npm run test:watch
 ```
 
-**Test execution is fast** (~3-4 seconds for 194 tests). Coverage report is in `coverage/index.html`.
+**Test execution is fast** (~3-4 seconds for 251 tests). Coverage report is in `coverage/index.html`.
 
 ---
 
@@ -273,6 +271,90 @@ The `core_rules.md` file (3115 lines) is the **canonical source of truth**. All 
 
 ---
 
+## Result Type Best Practices
+
+All game operations return `Result<T, ValidationError>` from `src/types/result.ts`. **Always use the provided utility functions** instead of accessing properties directly.
+
+### ✅ Correct Patterns
+
+```typescript
+// 1. Type-safe checking with isOk() / isErr()
+const result = someFunction(state);
+if (!isOk(result)) {
+  return result;  // Propagate error
+}
+const newState = result.value;  // Safe - TypeScript knows this is ok
+
+// 2. Early return pattern (recommended)
+if (!isOk(result)) {
+  console.error(result.error.message);
+  return result;
+}
+const newState = unwrap(result);  // Safe after isOk() check
+// Continue with newState
+
+// 3. Chaining operations with flatMap()
+const finalResult = flatMap(
+  flatMap(step1(state), s => step2(s)),
+  s => step3(s)
+);
+
+// 4. Transforming success values with map()
+const playerCount = map(getPlayers(state), players => players.size);
+
+// 5. Direct unwrap after validation
+if (!isOk(result)) return result;
+const state = unwrap(result);  // Safe - we checked isOk() first
+```
+
+### ❌ Incorrect Patterns
+
+```typescript
+// DON'T: Access .value without checking
+const newState = result.value;  // May crash if result is error!
+
+// DON'T: Check .ok directly as boolean
+if (result.ok) { ... }  // Use isOk(result) instead
+
+// DON'T: Access .error without checking
+const error = result.error;  // May crash if result is success!
+
+// DON'T: Use unwrap() without checking first
+const state = unwrap(riskyOperation());  // Crashes on error!
+```
+
+### Helper Functions Available
+
+- **`isOk(result)`** - Type guard for success (use this instead of `result.ok`)
+- **`isErr(result)`** - Type guard for error (use this instead of `!result.ok`)
+- **`unwrap(result)`** - Extract value or throw (safe after `isOk()` check)
+- **`map(result, fn)`** - Transform success value
+- **`flatMap(result, fn)`** - Chain result-returning operations
+- **`ok(value)`** - Create success result
+- **`err(error)`** - Create error result
+- **`validationError(code, message, path?, fixes?)`** - Create validation error
+
+### Why Use Type Guards?
+
+TypeScript's type narrowing works with `isOk()` and `isErr()`:
+
+```typescript
+if (isOk(result)) {
+  // TypeScript knows result is { ok: true; value: T }
+  result.value;  // ✅ Safe access
+  unwrap(result);  // ✅ Also safe - we checked first
+}
+
+if (isErr(result)) {
+  // TypeScript knows result is { ok: false; error: E }
+  result.error;  // ✅ Safe access
+}
+```
+
+Direct property access (`result.ok`) bypasses these safety guarantees. Using `unwrap()` after `isOk()` is encouraged as it provides cleaner code while maintaining type safety.
+
+---
+
 ## Validation Checklist
 
 Before submitting changes, verify:
@@ -298,7 +380,7 @@ Before submitting changes, verify:
 
 ## Performance Notes
 
-- **Test execution**: ~3-4 seconds for full suite (194 tests)
+- **Test execution**: ~3-4 seconds for full suite (251 tests)
 - **npm install**: ~21 seconds (164 packages)
 - **Memory**: Game states are copied on every change - watch for large state objects in loops
 - **RNG**: Use `SeededRNG` in tests for determinism, `RandomRNG` for production

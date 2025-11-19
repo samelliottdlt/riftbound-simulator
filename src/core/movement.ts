@@ -7,10 +7,12 @@
  * - Movement restrictions and validation
  */
 
-import { GameState, getCard, getPlayer, updatePlayer, getBattlefield, updateBattlefield } from '../types/gameState.js';
+import { GameState, getCard, getPlayer, updatePlayer, getBattlefield, updateBattlefield, BattlefieldState } from '../types/gameState.js';
 import { Result, ok, err, validationError } from '../types/result.js';
 import { PlayerId, UnitId, BattlefieldId, Phase, Keyword } from '../types/primitives.js';
 import { UnitCard, isUnit } from '../types/cards.js';
+import { exhaustPermanent, isExhausted } from './exhaustion.js';
+import { performCleanup } from './cleanup.js';
 
 /**
  * Location where a unit can be
@@ -70,8 +72,10 @@ export function canMove(state: GameState, unitId: UnitId): Result<boolean> {
     return ok(false);
   }
 
-  // TODO: Check if unit is exhausted (Rule 141.2)
-  // For now, we allow movement since exhaustion isn't fully tracked
+  // Check if unit is exhausted (Rule 141.2)
+  if (isExhausted(state, unitId as any)) {
+    return ok(false);
+  }
 
   return ok(true);
 }
@@ -245,16 +249,34 @@ export function moveUnit(
 
     const newUnits = new Set(battlefield.units);
     newUnits.add(unitId as any);
-    newState = updateBattlefield(newState, destination.battlefieldId, {
+    
+    // Apply Contested status if moving to enemy-controlled battlefield (Rule 424, 181.3.a)
+    let updatedBattlefield: BattlefieldState = {
       ...battlefield,
       units: newUnits,
-    });
+    };
+    
+    if (battlefield.controller !== null && battlefield.controller !== card.owner) {
+      updatedBattlefield = {
+        ...updatedBattlefield,
+        contested: true,
+        contestedBy: card.owner,
+      };
+    }
+    
+    newState = updateBattlefield(newState, destination.battlefieldId, updatedBattlefield);
   }
 
-  // TODO: Exhaust the unit (Rule 141.2)
-  // TODO: Trigger any movement-related abilities
+  // Exhaust the unit (Rule 141.2)
+  const exhaustResult = exhaustPermanent(newState, unitId as any);
+  if (!exhaustResult.ok) return exhaustResult;
+  newState = exhaustResult.value;
 
-  return ok(newState);
+  // Perform Cleanup after move completes (Rule 319.7, Rule 427)
+  const cleanupResult = performCleanup(newState);
+  if (!cleanupResult.ok) return cleanupResult;
+
+  return ok(cleanupResult.value);
 }
 
 /**
