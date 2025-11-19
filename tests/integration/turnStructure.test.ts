@@ -8,8 +8,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   startTurn,
   advancePhase,
-  executeAwakenPhase,
-  executeBeginningPhase,
   executeDrawPhase,
   executeEndingPhase,
   endTurn,
@@ -24,17 +22,12 @@ import {
 import { GameState, getPlayer, updatePlayer } from '../../src/types/gameState.js';
 import { createMinimalPlayer, createMinimalGameState } from '../utils/testHelpers.js';
 import {
-  PlayerId,
-  CardId,
   Phase,
   Energy,
   playerId,
   cardId,
-  CardCategory,
   Domain,
-  Might,
 } from '../../src/types/primitives.js';
-import { UnitCard } from '../../src/types/cards.js';
 
 describe('Turn Initialization', () => {
   let state: GameState;
@@ -43,8 +36,8 @@ describe('Turn Initialization', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
-    players.set(p2, createMinimalPlayer(p2));
+    players.set(p1, createMinimalPlayer());
+    players.set(p2, createMinimalPlayer());
     state = createMinimalGameState({ players, turnPlayer: p1 });
   });
 
@@ -84,8 +77,8 @@ describe('Phase Transitions', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
-    players.set(p2, createMinimalPlayer(p2));
+    players.set(p1, createMinimalPlayer());
+    players.set(p2, createMinimalPlayer());
     state = createMinimalGameState({ players, turnPlayer: p1, phase: Phase.Awaken });
   });
 
@@ -167,8 +160,8 @@ describe('Draw Phase', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
-    players.set(p2, createMinimalPlayer(p2));
+    players.set(p1, createMinimalPlayer());
+    players.set(p2, createMinimalPlayer());
     state = createMinimalGameState({ players, turnPlayer: p1, phase: Phase.Draw });
   });
 
@@ -242,8 +235,8 @@ describe('Ending Phase', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
-    players.set(p2, createMinimalPlayer(p2));
+    players.set(p1, createMinimalPlayer());
+    players.set(p2, createMinimalPlayer());
     state = createMinimalGameState({ players, turnPlayer: p1, phase: Phase.Ending });
   });
 
@@ -274,8 +267,8 @@ describe('Turn End', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
-    players.set(p2, createMinimalPlayer(p2));
+    players.set(p1, createMinimalPlayer());
+    players.set(p2, createMinimalPlayer());
     state = createMinimalGameState({ players, turnPlayer: p1, phase: Phase.Ending });
   });
 
@@ -317,8 +310,8 @@ describe('Complete Turn Cycle', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
-    players.set(p2, createMinimalPlayer(p2));
+    players.set(p1, createMinimalPlayer());
+    players.set(p2, createMinimalPlayer());
     state = createMinimalGameState({ players, turnPlayer: p1, phase: Phase.Awaken });
   });
 
@@ -357,8 +350,8 @@ describe('Query Functions', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
-    players.set(p2, createMinimalPlayer(p2));
+    players.set(p1, createMinimalPlayer());
+    players.set(p2, createMinimalPlayer());
     state = createMinimalGameState({ players, turnPlayer: p1, phase: Phase.Action });
   });
 

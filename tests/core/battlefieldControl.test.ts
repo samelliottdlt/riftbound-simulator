@@ -7,7 +7,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createMinimalPlayer, createMinimalGameState } from '../utils/testHelpers.js';
 import {
-  PlayerId,
   playerId,
   battlefieldId,
   BattlefieldId,
@@ -35,8 +34,8 @@ describe('Battlefield Control Queries', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
-    players.set(p2, createMinimalPlayer(p2));
+    players.set(p1, createMinimalPlayer());
+    players.set(p2, createMinimalPlayer());
     
     const battlefields = new Map<BattlefieldId, BattlefieldState>();
     battlefields.set(bf1, {
@@ -45,6 +44,8 @@ describe('Battlefield Control Queries', () => {
       units: new Set(),
       facedownCard: null,
       contested: false,
+      showdownStaged: false,
+      combatStaged: false,
     });
     battlefields.set(bf2, {
       id: bf2,
@@ -52,6 +53,8 @@ describe('Battlefield Control Queries', () => {
       units: new Set(),
       facedownCard: null,
       contested: false,
+      showdownStaged: false,
+      combatStaged: false,
     });
     
     state = createMinimalGameState({ players, turnPlayer: p1 });
@@ -100,7 +103,7 @@ describe('Contested Status', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
+    players.set(p1, createMinimalPlayer());
     
     const battlefields = new Map<BattlefieldId, BattlefieldState>();
     battlefields.set(bf1, {
@@ -109,6 +112,8 @@ describe('Contested Status', () => {
       units: new Set(),
       facedownCard: null,
       contested: false,
+      showdownStaged: false,
+      combatStaged: false,
     });
     
     state = createMinimalGameState({ players, turnPlayer: p1 });
@@ -169,8 +174,8 @@ describe('Control Establishment and Loss', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
-    players.set(p2, createMinimalPlayer(p2));
+    players.set(p1, createMinimalPlayer());
+    players.set(p2, createMinimalPlayer());
     
     const battlefields = new Map<BattlefieldId, BattlefieldState>();
     battlefields.set(bf1, {
@@ -179,6 +184,8 @@ describe('Control Establishment and Loss', () => {
       units: new Set(),
       facedownCard: null,
       contested: false,
+      showdownStaged: false,
+      combatStaged: false,
     });
     
     state = createMinimalGameState({ players, turnPlayer: p1 });
@@ -276,7 +283,7 @@ describe('Multiple Battlefield Control', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
+    players.set(p1, createMinimalPlayer());
     
     const battlefields = new Map<BattlefieldId, BattlefieldState>();
     battlefields.set(bf1, {
@@ -285,6 +292,8 @@ describe('Multiple Battlefield Control', () => {
       units: new Set(),
       facedownCard: null,
       contested: false,
+      showdownStaged: false,
+      combatStaged: false,
     });
     battlefields.set(bf2, {
       id: bf2,
@@ -292,6 +301,8 @@ describe('Multiple Battlefield Control', () => {
       units: new Set(),
       facedownCard: null,
       contested: false,
+      showdownStaged: false,
+      combatStaged: false,
     });
     battlefields.set(bf3, {
       id: bf3,
@@ -299,6 +310,8 @@ describe('Multiple Battlefield Control', () => {
       units: new Set(),
       facedownCard: null,
       contested: false,
+      showdownStaged: false,
+      combatStaged: false,
     });
     
     state = createMinimalGameState({ players, turnPlayer: p1 });

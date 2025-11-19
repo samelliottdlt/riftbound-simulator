@@ -10,25 +10,23 @@ import {
   payCost, 
   canPlayCard, 
   playUnit, 
-  playSpell,
-  playGear 
+  playSpell
 } from '../../src/core/cardPlaying.js';
 import { GameState, getPlayer, updatePlayer } from '../../src/types/gameState.js';
 import { createMinimalPlayer, createMinimalGameState } from '../utils/testHelpers.js';
 import {  
-  PlayerId, 
-  CardId, 
   Cost, 
   Domain, 
   Phase, 
-  Zone, 
   Energy, 
   cardId, 
   playerId,
   CardCategory,
-  Might
+  Might,
+  ChainStateType
 } from '../../src/types/primitives.js';
-import { Card, UnitCard } from '../../src/types/cards.js';
+import { UnitCard, SpellCard } from '../../src/types/cards.js';
+import { chainExists } from '../../src/core/chain.js';
 
 describe('Cost Validation', () => {
   let state: GameState;
@@ -37,8 +35,8 @@ describe('Cost Validation', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
-    players.set(p2, createMinimalPlayer(p2));
+    players.set(p1, createMinimalPlayer());
+    players.set(p2, createMinimalPlayer());
     state = createMinimalGameState({ players, turnPlayer: p1 });
   });
 
@@ -100,8 +98,8 @@ describe('Cost Payment', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
-    players.set(p2, createMinimalPlayer(p2));
+    players.set(p1, createMinimalPlayer());
+    players.set(p2, createMinimalPlayer());
     state = createMinimalGameState({ players, turnPlayer: p1 });
   });
 
@@ -174,8 +172,8 @@ describe('Play Validation', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
-    players.set(p2, createMinimalPlayer(p2));
+    players.set(p1, createMinimalPlayer());
+    players.set(p2, createMinimalPlayer());
     state = createMinimalGameState({ players, turnPlayer: p1, phase: Phase.Action });
   });
 
@@ -186,7 +184,7 @@ describe('Play Validation', () => {
       name: 'Test Unit',
       category: CardCategory.Unit,
       cost: { energy: 1 as Energy, power: [] },
-      might: { attack: 2, defense: 2 } as Might,
+      might: 2 as Might,
       domains: [Domain.Mind],
       keywords: [],
       supertypes: [],
@@ -218,7 +216,7 @@ describe('Play Validation', () => {
       name: 'Test Unit',
       category: CardCategory.Unit,
       cost: { energy: 1 as Energy, power: [] },
-      might: { attack: 2, defense: 2 } as Might,
+      might: 2 as Might,
       domains: [Domain.Mind],
       keywords: [],
       supertypes: [],
@@ -250,7 +248,7 @@ describe('Play Validation', () => {
       name: 'Test Unit',
       category: CardCategory.Unit,
       cost: { energy: 1 as Energy, power: [] },
-      might: { attack: 2, defense: 2 } as Might,
+      might: 2 as Might,
       domains: [Domain.Mind],
       keywords: [],
       supertypes: [],
@@ -283,8 +281,8 @@ describe('Playing Units', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
-    players.set(p2, createMinimalPlayer(p2));
+    players.set(p1, createMinimalPlayer());
+    players.set(p2, createMinimalPlayer());
     state = createMinimalGameState({ players, turnPlayer: p1, phase: Phase.Action });
   });
 
@@ -295,7 +293,7 @@ describe('Playing Units', () => {
       name: 'Test Unit',
       category: CardCategory.Unit,
       cost: { energy: 2 as Energy, power: [{ domain: Domain.Mind, amount: 1 }] },
-      might: { attack: 3, defense: 3 } as Might,
+      might: 3 as Might,
       domains: [Domain.Mind],
       keywords: [],
       supertypes: [],
@@ -331,7 +329,7 @@ describe('Playing Units', () => {
       name: 'Test Unit',
       category: CardCategory.Unit,
       cost: { energy: 2 as Energy, power: [{ domain: Domain.Mind, amount: 1 }] },
-      might: { attack: 3, defense: 3 } as Might,
+      might: 3 as Might,
       domains: [Domain.Mind],
       keywords: [],
       supertypes: [],
@@ -369,7 +367,7 @@ describe('Playing Units', () => {
       name: 'Test Unit',
       category: CardCategory.Unit,
       cost: { energy: 1 as Energy, power: [] },
-      might: { attack: 2, defense: 2 } as Might,
+      might: 2 as Might,
       domains: [Domain.Mind],
       keywords: [],
       supertypes: [],
@@ -393,6 +391,236 @@ describe('Playing Units', () => {
     if (result.ok) {
       const newPlayer = getPlayer(result.value, p1)!;
       expect(newPlayer.cardsPlayedThisTurn).toContain(card.id);
+    }
+  });
+});
+
+describe('Playing Spells with Chain Integration', () => {
+  let state: GameState;
+  const p1 = playerId('p1');
+  const p2 = playerId('p2');
+
+  beforeEach(() => {
+    const players = new Map();
+    players.set(p1, createMinimalPlayer());
+    players.set(p2, createMinimalPlayer());
+    state = createMinimalGameState({ players, turnPlayer: p1, phase: Phase.Action });
+  });
+
+  it('should add spell to Chain as Pending item when played (Rule 351)', () => {
+    const spell: SpellCard = {
+      id: cardId('spell1'),
+      owner: p1,
+      name: 'Test Spell',
+      category: CardCategory.Spell,
+      cost: { energy: 2 as Energy, power: [] },
+      domains: [Domain.Mind],
+      keywords: [],
+      supertypes: [],
+      tags: [],
+      instructions: [],
+      rulesText: 'Draw a card',
+    };
+
+    const player = getPlayer(state, p1)!;
+    const updatedPlayer = {
+      ...player,
+      hand: [spell.id],
+      energy: 3 as Energy,
+    };
+    state = updatePlayer(state, p1, updatedPlayer);
+    state.cards.set(spell.id, spell);
+
+    const result = playSpell(state, spell.id, p1);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      // Chain should exist and contain the spell
+      expect(chainExists(result.value)).toBe(true);
+      expect(result.value.chainState.items.length).toBe(1);
+      
+      const chainItem = result.value.chainState.items[0];
+      expect(chainItem.type).toBe('spell');
+      expect(chainItem.source).toBe(spell.id);
+      expect(chainItem.controller).toBe(p1);
+      // Note: Item is finalized by Cleanup (Rule 322.8) after adding to Chain
+      expect(chainItem.pending).toBe(false); // Finalized by Cleanup step 8
+    }
+  });
+
+  it('should set state to Closed when spell added to Chain (Rule 330)', () => {
+    const spell: SpellCard = {
+      id: cardId('spell1'),
+      owner: p1,
+      name: 'Test Spell',
+      category: CardCategory.Spell,
+      cost: { energy: 1 as Energy, power: [] },
+      domains: [Domain.Chaos],
+      keywords: [],
+      supertypes: [],
+      tags: [],
+      instructions: [],
+      rulesText: 'Deal 3 damage',
+    };
+
+    const player = getPlayer(state, p1)!;
+    const updatedPlayer = {
+      ...player,
+      hand: [spell.id],
+      energy: 2 as Energy,
+    };
+    state = updatePlayer(state, p1, updatedPlayer);
+    state.cards.set(spell.id, spell);
+
+    // Initially Open State
+    expect(state.turnState.chainState).toBe(ChainStateType.Open);
+
+    const result = playSpell(state, spell.id, p1);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      // Should transition to Closed State (Rule 330.1)
+      expect(result.value.turnState.chainState).toBe(ChainStateType.Closed);
+    }
+  });
+
+  it('should deduct cost when playing spell (Rule 354)', () => {
+    const spell: SpellCard = {
+      id: cardId('spell1'),
+      owner: p1,
+      name: 'Test Spell',
+      category: CardCategory.Spell,
+      cost: { energy: 2 as Energy, power: [{ domain: Domain.Mind, amount: 1 }] },
+      domains: [Domain.Mind],
+      keywords: [],
+      supertypes: [],
+      tags: [],
+      instructions: [],
+      rulesText: 'Draw 2 cards',
+    };
+
+    const player = getPlayer(state, p1)!;
+    const updatedPlayer = {
+      ...player,
+      hand: [spell.id],
+      energy: 3 as Energy,
+      runePool: [{ domain: Domain.Mind, amount: 2 }],
+    };
+    state = updatePlayer(state, p1, updatedPlayer);
+    state.cards.set(spell.id, spell);
+
+    const result = playSpell(state, spell.id, p1);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const newPlayer = getPlayer(result.value, p1)!;
+      expect(newPlayer.energy).toBe(1); // 3 - 2
+      const mindPower = newPlayer.runePool.filter(p => p.domain === Domain.Mind);
+      const totalMind = mindPower.reduce((sum, p) => sum + p.amount, 0);
+      expect(totalMind).toBe(1); // 2 - 1
+    }
+  });
+
+  it('should track spell in cardsPlayedThisTurn', () => {
+    const spell: SpellCard = {
+      id: cardId('spell1'),
+      owner: p1,
+      name: 'Test Spell',
+      category: CardCategory.Spell,
+      cost: { energy: 1 as Energy, power: [] },
+      domains: [Domain.Fury],
+      keywords: [],
+      supertypes: [],
+      tags: [],
+      instructions: [],
+      rulesText: 'Deal damage',
+    };
+
+    const player = getPlayer(state, p1)!;
+    const updatedPlayer = {
+      ...player,
+      hand: [spell.id],
+      energy: 2 as Energy,
+    };
+    state = updatePlayer(state, p1, updatedPlayer);
+    state.cards.set(spell.id, spell);
+
+    const result = playSpell(state, spell.id, p1);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const newPlayer = getPlayer(result.value, p1)!;
+      expect(newPlayer.cardsPlayedThisTurn).toContain(spell.id);
+    }
+  });
+
+  it('should set Active Player to spell controller (Rule 332.1)', () => {
+    const spell: SpellCard = {
+      id: cardId('spell1'),
+      owner: p1,
+      name: 'Test Spell',
+      category: CardCategory.Spell,
+      cost: { energy: 1 as Energy, power: [] },
+      domains: [Domain.Mind],
+      keywords: [],
+      supertypes: [],
+      tags: [],
+      instructions: [],
+      rulesText: 'Draw a card',
+    };
+
+    const player = getPlayer(state, p1)!;
+    const updatedPlayer = {
+      ...player,
+      hand: [spell.id],
+      energy: 2 as Energy,
+    };
+    state = updatePlayer(state, p1, updatedPlayer);
+    state.cards.set(spell.id, spell);
+
+    const result = playSpell(state, spell.id, p1);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      // Active Player should be set to spell controller (Rule 332.1)
+      expect(result.value.turnState.activePlayer).toBe(p1);
+      expect(result.value.turnState.priority).toBe(p1);
+    }
+  });
+
+  it('should handle targeted spells with targetIds (Rule 352)', () => {
+    const spell: SpellCard = {
+      id: cardId('spell1'),
+      owner: p1,
+      name: 'Kill Spell',
+      category: CardCategory.Spell,
+      cost: { energy: 3 as Energy, power: [] },
+      domains: [Domain.Chaos],
+      keywords: [],
+      supertypes: [],
+      tags: [],
+      instructions: [],
+      rulesText: 'Kill a unit',
+    };
+
+    const targetUnit = cardId('unit1');
+
+    const player = getPlayer(state, p1)!;
+    const updatedPlayer = {
+      ...player,
+      hand: [spell.id],
+      energy: 4 as Energy,
+    };
+    state = updatePlayer(state, p1, updatedPlayer);
+    state.cards.set(spell.id, spell);
+
+    const result = playSpell(state, spell.id, p1, [targetUnit]);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      // Chain item should store targets (Rule 352)
+      const chainItem = result.value.chainState.items[0];
+      expect(chainItem.targetIds).toContain(targetUnit);
     }
   });
 });

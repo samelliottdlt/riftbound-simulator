@@ -24,9 +24,10 @@ import {
   battlefieldId,
   unitId,
   cardId,
+  UnitId,
   Phase,
   CardCategory,
-  Keyword,
+  Might,
   type Points,
 } from '../../src/types/primitives.js';
 import type { BattlefieldState, GameState } from '../../src/types/gameState.js';
@@ -39,8 +40,7 @@ function createTestUnit(
   id: string,
   owner: string,
   name: string,
-  attack: number,
-  defense: number
+  attack: number
 ): UnitCard {
   return {
     id: cardId(id),
@@ -50,8 +50,8 @@ function createTestUnit(
     domains: [],
     supertypes: [],
     tags: [],
-    cost: { energy: 0, power: 0 },
-    might: { attack, defense },
+    cost: { energy: 0, power: [] },
+    might: attack as Might,
     keywords: [],
     abilities: [],
     rulesText: '',
@@ -69,13 +69,15 @@ function createBattlefieldWithUnit(
   const battlefieldIdValue = battlefieldId(bfId);
   const unitIdValue = unitId(unit.id);
 
-  // Add battlefield
+  // Add battlefield with the unit already at it
   const bf: BattlefieldState = {
     id: battlefieldIdValue,
     controller: null,
     contested: false,
-    units: new Set([unitIdValue]),
+    units: new Set([unitIdValue]), // Unit is at the battlefield
     facedownCard: null,
+    showdownStaged: false,
+    combatStaged: false,
   };
 
   // Add unit card to game
@@ -115,13 +117,13 @@ describe('Scoring Integration', () => {
       const bf1 = battlefieldId('bf1');
 
       let state = createMinimalGameState({
-        players: new Map([[p1, createMinimalPlayer(p1)]]),
+        players: new Map([[p1, createMinimalPlayer()]]),
         turnPlayer: p1,
         phase: Phase.Awaken,
       });
 
       // Create battlefield with unit
-      const unit1 = createTestUnit('unit1', 'p1', 'Test Unit', 2, 2);
+      const unit1 = createTestUnit('unit1', 'p1', 'Test Unit', 2);
       state = createBattlefieldWithUnit(state, 'bf1', unit1);
 
       // Establish control
@@ -155,14 +157,14 @@ describe('Scoring Integration', () => {
       const bf2 = battlefieldId('bf2');
 
       let state = createMinimalGameState({
-        players: new Map([[p1, createMinimalPlayer(p1)]]),
+        players: new Map([[p1, createMinimalPlayer()]]),
         turnPlayer: p1,
         phase: Phase.Awaken,
       });
 
       // Create two battlefields with units
-      const unit1 = createTestUnit('unit1', 'p1', 'Test Unit 1', 2, 2);
-      const unit2 = createTestUnit('unit2', 'p1', 'Test Unit 2', 2, 2);
+      const unit1 = createTestUnit('unit1', 'p1', 'Test Unit 1', 2);
+      const unit2 = createTestUnit('unit2', 'p1', 'Test Unit 2', 2);
       state = createBattlefieldWithUnit(state, 'bf1', unit1);
       state = createBattlefieldWithUnit(state, 'bf2', unit2);
 
@@ -191,16 +193,15 @@ describe('Scoring Integration', () => {
 
     it('should not score Hold for uncontrolled battlefields', () => {
       const p1 = playerId('p1');
-      const bf1 = battlefieldId('bf1');
 
       let state = createMinimalGameState({
-        players: new Map([[p1, createMinimalPlayer(p1)]]),
+        players: new Map([[p1, createMinimalPlayer()]]),
         turnPlayer: p1,
         phase: Phase.Awaken,
       });
 
       // Create battlefield but DON'T establish control
-      const unit1 = createTestUnit('unit1', 'p1', 'Test Unit', 2, 2);
+      const unit1 = createTestUnit('unit1', 'p1', 'Test Unit', 2);
       state = createBattlefieldWithUnit(state, 'bf1', unit1);
 
       // Advance to Beginning Phase
@@ -229,15 +230,15 @@ describe('Scoring Integration', () => {
 
       let state = createMinimalGameState({
         players: new Map([
-          [p1, createMinimalPlayer(p1)],
-          [p2, createMinimalPlayer(p2)],
+          [p1, createMinimalPlayer()],
+          [p2, createMinimalPlayer()],
         ]),
         turnPlayer: p1,
         phase: Phase.Combat,
       });
 
       // Create battlefield with p1's unit (p2 currently controls it)
-      const unit1 = createTestUnit('unit1', 'p1', 'Attacker', 3, 2);
+      const unit1 = createTestUnit('unit1', 'p1', 'Attacker', 3);
       state = createBattlefieldWithUnit(state, 'bf1', unit1);
 
       // p2 controls the battlefield initially
@@ -251,7 +252,9 @@ describe('Scoring Integration', () => {
           attackers: new Set([unitId(unit1.id)]),
           defenders: new Set(),
           battlefield: bf1,
-          damageAssignments: new Map() as any,
+          damageAssignments: new Map<UnitId, Map<UnitId, number>>(),
+          attackingPlayer: p1,
+          defendingPlayer: p2,
         },
       };
 
@@ -278,15 +281,15 @@ describe('Scoring Integration', () => {
 
       let state = createMinimalGameState({
         players: new Map([
-          [p1, createMinimalPlayer(p1)],
-          [p2, createMinimalPlayer(p2)],
+          [p1, createMinimalPlayer()],
+          [p2, createMinimalPlayer()],
         ]),
         turnPlayer: p1,
         phase: Phase.Combat,
       });
 
       // Create battlefield
-      const unit1 = createTestUnit('unit1', 'p1', 'Attacker', 3, 2);
+      const unit1 = createTestUnit('unit1', 'p1', 'Attacker', 3);
       state = createBattlefieldWithUnit(state, 'bf1', unit1);
 
       // p1 controls and has already scored
@@ -311,7 +314,9 @@ describe('Scoring Integration', () => {
           attackers: new Set([unitId(unit1.id)]),
           defenders: new Set(),
           battlefield: bf1,
-          damageAssignments: new Map() as any,
+          damageAssignments: new Map<UnitId, Map<UnitId, number>>(),
+          attackingPlayer: p1,
+          defendingPlayer: p2,
         },
       };
 
@@ -335,15 +340,15 @@ describe('Scoring Integration', () => {
 
       let state = createMinimalGameState({
         players: new Map([
-          [p1, createMinimalPlayer(p1)],
-          [p2, createMinimalPlayer(p2)],
+          [p1, createMinimalPlayer()],
+          [p2, createMinimalPlayer()],
         ]),
         turnPlayer: p1,
         phase: Phase.Awaken,
       });
 
       // Create battlefield
-      const unit1 = createTestUnit('unit1', 'p1', 'Unit', 2, 2);
+      const unit1 = createTestUnit('unit1', 'p1', 'Unit', 2);
       state = createBattlefieldWithUnit(state, 'bf1', unit1);
 
       // p1 controls

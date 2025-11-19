@@ -42,6 +42,7 @@ export interface UnitCard extends BaseCard {
   might: Might;        // Single combat statistic
   damage?: Damage;     // Damage marked on unit (Rule 140.3)
   armor?: Armor;       // If present, reduces damage taken
+  exhausted?: boolean; // Units enter exhausted (Rule 140.4) unless Accelerate
   keywords: Keyword[];
   abilities: Ability[]; // Triggered, activated, and passive abilities
   rulesText: string;
@@ -64,6 +65,7 @@ export interface SpellCard extends BaseCard {
 export interface GearCard extends BaseCard {
   category: CardCategory.Gear;
   cost: Cost;
+  exhausted?: boolean; // Gear can be exhausted for activated abilities (Rule 401)
   keywords: Keyword[];
   abilities: Ability[]; // Triggered, activated, and passive abilities
   rulesText: string;
@@ -74,6 +76,7 @@ export interface GearCard extends BaseCard {
  */
 export interface RuneCard extends BaseCard {
   category: CardCategory.Rune;
+  exhausted?: boolean; // Runes can be exhausted for activated abilities (Rule 401)
   abilities: Ability[]; // Rune abilities
   rulesText: string;
 }

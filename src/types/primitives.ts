@@ -181,7 +181,25 @@ export enum CombatDesignation {
 }
 
 /**
- * Game State Status
+ * Turn State Type - Neutral vs Showdown (Rule 308)
+ * Determines whether a Showdown is in progress
+ */
+export enum TurnStateType {
+  Neutral = 'Neutral',       // No Showdown in progress (Rule 308.2)
+  Showdown = 'Showdown',     // Showdown in progress (Rule 308.1)
+}
+
+/**
+ * Chain State Type - Open vs Closed (Rule 310)
+ * Determines whether Chain exists (affects what can be played)
+ */
+export enum ChainStateType {
+  Open = 'Open',             // No Chain exists (Rule 310.1, 310.3)
+  Closed = 'Closed',         // Chain exists (Rule 310.2, 310.4)
+}
+
+/**
+ * Game State Status (deprecated - use TurnStateType + ChainStateType)
  */
 export enum GameStateStatus {
   OpenState = 'OpenState',      // Players can play cards

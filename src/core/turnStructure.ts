@@ -14,6 +14,8 @@ import { channelRunes, emptyRunePool } from './runes.js';
 import { scoreHold, getScorableBattlefields } from './scoring.js';
 import { clearScoredBattlefields } from './victory.js';
 import { triggerOnScoreAbilities } from './triggeredAbilities.js';
+import { readyAllPermanents } from './exhaustion.js';
+import { performCleanup } from './cleanup.js';
 
 
 /**
@@ -57,6 +59,8 @@ export function startTurn(
 
 /**
  * Advance to the next phase
+ * 
+ * Rule 319.2: Cleanup occurs after transitioning between phases
  */
 export function advancePhase(state: GameState): Result<GameState> {
   const currentPhase = state.turnState.phase;
@@ -69,13 +73,20 @@ export function advancePhase(state: GameState): Result<GameState> {
     ));
   }
 
-  const newState: GameState = {
+  let newState: GameState = {
     ...state,
     turnState: {
       ...state.turnState,
       phase: nextPhase,
     },
   };
+
+  // Rule 319.2: Cleanup after phase transition
+  const cleanupResult = performCleanup(newState);
+  if (!cleanupResult.ok) {
+    return cleanupResult;
+  }
+  newState = cleanupResult.value;
 
   return ok(newState);
 }
@@ -124,10 +135,11 @@ export function executeAwakenPhase(
     ));
   }
 
-  // TODO: Ready all game objects controlled by playerId (Rule 315.1.a)
-  // This includes Units, Gear, Runes, etc.
+  // Ready all game objects controlled by playerId (Rule 315.1.a)
+  const readyResult = readyAllPermanents(state, playerId);
+  if (!readyResult.ok) return readyResult;
   
-  return ok(state);
+  return ok(readyResult.value);
 }
 
 /**

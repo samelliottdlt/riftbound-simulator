@@ -23,12 +23,11 @@ import {
 } from '../../src/core/abilityResolution.js';
 import {
   descriptorAbility,
-  functionAbility,
   AbilityTrigger,
   EffectType,
 } from '../../src/types/abilities.js';
 import { GameState } from '../../src/types/gameState.js';
-import { playerId, cardId, battlefieldId, abilityId, Phase, Keyword } from '../../src/types/primitives.js';
+import { playerId, cardId, battlefieldId, abilityId, Phase, Keyword, TurnStateType, ChainStateType, UnitId } from '../../src/types/primitives.js';
 import { createUnit } from '../../src/types/cards.js';
 import { SeededRNG } from '../../src/utils/rng.js';
 
@@ -90,6 +89,8 @@ describe('Ability System Foundation', () => {
           units: new Set(),
           facedownCard: null,
           contested: false,
+          showdownStaged: false,
+          combatStaged: false,
         }],
       ]),
       turnState: {
@@ -97,16 +98,21 @@ describe('Ability System Foundation', () => {
         turnPlayer: p1,
         turnNumber: 1,
         priority: null,
+        stateType: TurnStateType.Neutral,
+        chainState: ChainStateType.Open,
+        activePlayer: null,
+        focus: null,
       },
       combatState: {
         active: false,
-        attackers: new Set(),
-        defenders: new Set(),
         battlefield: null,
-        damageAssignments: new Map(),
+        attackingPlayer: null,
+        defendingPlayer: null,
+        attackers: new Set<UnitId>(),
+        defenders: new Set<UnitId>(),
+        damageAssignments: new Map<UnitId, Map<UnitId, number>>(),
       },
       chainState: {
-        active: false,
         items: [],
       },
       rng: new SeededRNG('test-seed'),
@@ -204,8 +210,8 @@ describe('Ability System Foundation', () => {
 
       // Active player (p1) abilities should be first
       expect(state.abilityQueue?.queue.length).toBe(2);
-      expect(state.abilityQueue?.queue[0].controller).toBe(p1);
-      expect(state.abilityQueue?.queue[1].controller).toBe(p2);
+      expect((state.abilityQueue?.queue[0] as any).controller).toBe(p1);
+      expect((state.abilityQueue?.queue[1] as any).controller).toBe(p2);
     });
   });
 

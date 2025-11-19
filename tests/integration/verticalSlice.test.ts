@@ -37,8 +37,8 @@ describe('Vertical Slice: Basic Turn Cycle', () => {
         [card2, createCard(card2, p2, 'Test Unit 2', 2)],
       ]),
       players: new Map([
-        [p1, createMinimalPlayer(p1, { hand: [], deck: [card1] })],
-        [p2, createMinimalPlayer(p2, { hand: [], deck: [card2] })],
+        [p1, createMinimalPlayer({ hand: [], deck: [card1] })],
+        [p2, createMinimalPlayer({ hand: [], deck: [card2] })],
       ]),
       turnPlayer: p1,
       phase: Phase.Draw,
@@ -99,7 +99,7 @@ describe('Vertical Slice: Basic Turn Cycle', () => {
     const state: GameState = createMinimalGameState({
       cards: new Map([[card1, createCard(card1, p1, 'Test Unit', 3)]]),
       players: new Map([
-        [p1, createMinimalPlayer(p1, { hand: [], deck: [card1] })],
+        [p1, createMinimalPlayer({ hand: [], deck: [card1] })],
       ]),
       turnPlayer: p1,
       phase: Phase.Draw,
@@ -120,7 +120,7 @@ describe('Vertical Slice: Basic Turn Cycle', () => {
     const state: GameState = createMinimalGameState({
       cards: new Map(),
       players: new Map([
-        [p1, createMinimalPlayer(p1, { hand: [], deck: [] })],
+        [p1, createMinimalPlayer({ hand: [], deck: [] })],
       ]),
       turnPlayer: p1,
       phase: Phase.Draw,

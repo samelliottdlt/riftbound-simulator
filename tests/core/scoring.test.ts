@@ -27,7 +27,6 @@ import {
   playerId,
   battlefieldId,
   type Points,
-  type VictoryScore,
 } from '../../src/types/primitives.js';
 import type { BattlefieldState, GameState } from '../../src/types/gameState.js';
 
@@ -37,7 +36,7 @@ import type { BattlefieldState, GameState } from '../../src/types/gameState.js';
 function createTestGameState(playerIds: string[]): GameState {
   const players = new Map();
   for (const id of playerIds) {
-    players.set(playerId(id), createMinimalPlayer(playerId(id)));
+    players.set(playerId(id), createMinimalPlayer());
   }
 
   return createMinimalGameState({
@@ -60,6 +59,8 @@ function createTestBattlefield(
     contested: false,
     units: new Set(),
     facedownCard: null,
+    showdownStaged: false,
+    combatStaged: false,
   };
 
   return {

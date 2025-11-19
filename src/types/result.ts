@@ -44,7 +44,6 @@ export function isErr<T, E>(result: Result<T, E>): result is { ok: false; error:
 
 /**
  * Unwraps a result, throwing if it's an error
- * Use only in tests or when you're certain of success
  */
 export function unwrap<T, E>(result: Result<T, E>): T {
   if (result.ok) {

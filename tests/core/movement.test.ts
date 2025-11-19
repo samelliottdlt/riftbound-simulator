@@ -17,12 +17,12 @@ import {
 import { GameState, getPlayer, updatePlayer, BattlefieldState } from '../../src/types/gameState.js';
 import { createMinimalPlayer, createMinimalGameState } from '../utils/testHelpers.js';
 import {
-  PlayerId,
   Phase,
   Energy,
   playerId,
   cardId,
   battlefieldId,
+  UnitId,
   CardCategory,
   Domain,
   Keyword,
@@ -39,8 +39,8 @@ describe('Movement System (Rule 141)', () => {
 
   beforeEach(() => {
     const players = new Map();
-    players.set(p1, createMinimalPlayer(p1));
-    players.set(p2, createMinimalPlayer(p2));
+    players.set(p1, createMinimalPlayer());
+    players.set(p2, createMinimalPlayer());
     
     const battlefields = new Map();
     battlefields.set(bf1, {
@@ -87,7 +87,7 @@ describe('Movement System (Rule 141)', () => {
       const player = getPlayer(state, p1)!;
       state = updatePlayer(state, p1, { 
         ...player, 
-        base: new Set([unit.id as any]) 
+        base: new Set([unit.id] as UnitId[]) 
       });
 
       const result = getUnitLocation(state, unit.id as any);
@@ -117,7 +117,7 @@ describe('Movement System (Rule 141)', () => {
       const battlefield = state.battlefields.get(bf1)!;
       state.battlefields.set(bf1, {
         ...battlefield,
-        units: new Set([unit.id as any]),
+        units: new Set([unit.id] as UnitId[]),
       });
 
       const result = getUnitLocation(state, unit.id as any);
@@ -232,7 +232,7 @@ describe('Movement System (Rule 141)', () => {
       const player = getPlayer(state, p1)!;
       state = updatePlayer(state, p1, { 
         ...player, 
-        base: new Set([unit.id as any]) 
+        base: new Set([unit.id] as UnitId[]) 
       });
 
       const result = moveUnit(state, unit.id as any, {
@@ -254,7 +254,7 @@ describe('Movement System (Rule 141)', () => {
 
     it('should reject move to battlefield with 2 other players (Rule 141.4.a.1)', () => {
       const p3 = playerId('p3');
-      state.players.set(p3, createMinimalPlayer(p3));
+      state.players.set(p3, createMinimalPlayer());
 
       const unit1: UnitCard = {
         id: cardId('unit1'),
@@ -309,14 +309,14 @@ describe('Movement System (Rule 141)', () => {
       const battlefield = state.battlefields.get(bf1)!;
       state.battlefields.set(bf1, {
         ...battlefield,
-        units: new Set([unit2.id as any, unit3.id as any]),
+        units: new Set([unit2.id as any, unit3.id] as UnitId[]),
       });
 
       // Put p1 unit in base
       const player = getPlayer(state, p1)!;
       state = updatePlayer(state, p1, { 
         ...player, 
-        base: new Set([unit1.id as any]) 
+        base: new Set([unit1.id] as UnitId[]) 
       });
 
       // Try to move p1 unit to battlefield with 2 other players
@@ -369,14 +369,14 @@ describe('Movement System (Rule 141)', () => {
       const battlefield = state.battlefields.get(bf1)!;
       state.battlefields.set(bf1, {
         ...battlefield,
-        units: new Set([unit1.id as any]),
+        units: new Set([unit1.id] as UnitId[]),
       });
 
       // Unit2 at base
       const player = getPlayer(state, p1)!;
       state = updatePlayer(state, p1, { 
         ...player, 
-        base: new Set([unit2.id as any]) 
+        base: new Set([unit2.id] as UnitId[]) 
       });
 
       // Move unit2 to same battlefield as unit1
@@ -389,8 +389,8 @@ describe('Movement System (Rule 141)', () => {
       if (result.ok) {
         const updatedBattlefield = result.value.battlefields.get(bf1)!;
         expect(updatedBattlefield.units.size).toBe(2);
-        expect(updatedBattlefield.units.has(unit1.id as any)).toBe(true);
-        expect(updatedBattlefield.units.has(unit2.id as any)).toBe(true);
+        expect(updatedBattlefield.units.has(unit1.id as UnitId)).toBe(true);
+        expect(updatedBattlefield.units.has(unit2.id as UnitId)).toBe(true);
       }
     });
   });
@@ -418,7 +418,7 @@ describe('Movement System (Rule 141)', () => {
       const battlefield = state.battlefields.get(bf1)!;
       state.battlefields.set(bf1, {
         ...battlefield,
-        units: new Set([unit.id as any]),
+        units: new Set([unit.id] as UnitId[]),
       });
 
       const result = moveUnit(state, unit.id as any, { type: 'base' });
@@ -459,7 +459,7 @@ describe('Movement System (Rule 141)', () => {
       const battlefield1 = state.battlefields.get(bf1)!;
       state.battlefields.set(bf1, {
         ...battlefield1,
-        units: new Set([unit.id as any]),
+        units: new Set([unit.id] as UnitId[]),
       });
 
       // Move to battlefield 2
@@ -502,7 +502,7 @@ describe('Movement System (Rule 141)', () => {
       const battlefield1 = state.battlefields.get(bf1)!;
       state.battlefields.set(bf1, {
         ...battlefield1,
-        units: new Set([unit.id as any]),
+        units: new Set([unit.id] as UnitId[]),
       });
 
       // Try to move to battlefield 2 without Ganking
@@ -556,12 +556,12 @@ describe('Movement System (Rule 141)', () => {
       const player = getPlayer(state, p1)!;
       state = updatePlayer(state, p1, { 
         ...player, 
-        base: new Set([unit1.id as any, unit2.id as any]) 
+        base: new Set([unit1.id as UnitId, unit2.id] as UnitId[]) 
       });
 
       const result = moveUnits(
         state, 
-        [unit1.id as any, unit2.id as any],
+        [unit1.id as UnitId, unit2.id as UnitId],
         { type: 'battlefield', battlefieldId: bf1 }
       );
 
@@ -569,13 +569,13 @@ describe('Movement System (Rule 141)', () => {
       if (result.ok) {
         // Both units should be at battlefield
         const battlefield = result.value.battlefields.get(bf1)!;
-        expect(battlefield.units.has(unit1.id as any)).toBe(true);
-        expect(battlefield.units.has(unit2.id as any)).toBe(true);
+        expect(battlefield.units.has(unit1.id as UnitId)).toBe(true);
+        expect(battlefield.units.has(unit2.id as UnitId)).toBe(true);
 
         // Neither should be in base
         const updatedPlayer = getPlayer(result.value, p1)!;
-        expect(updatedPlayer.base.has(unit1.id as any)).toBe(false);
-        expect(updatedPlayer.base.has(unit2.id as any)).toBe(false);
+        expect(updatedPlayer.base.has(unit1.id as UnitId)).toBe(false);
+        expect(updatedPlayer.base.has(unit2.id as UnitId)).toBe(false);
       }
     });
   });

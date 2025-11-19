@@ -8,11 +8,10 @@ import { describe, it, expect } from 'vitest';
 import {
   playerId,
   cardId,
-  Phase,
+  UnitId,
   Zone,
   createCard,
   isOk,
-  unwrap,
 } from '../../src/index.js';
 import { createMinimalPlayer, createMinimalGameState } from '../utils/testHelpers.js';
 import {
@@ -36,7 +35,7 @@ describe('Zone Management', () => {
 
       const state = createMinimalGameState({
         cards: new Map([[card1, createCard(card1, p1, 'Test Unit')]]),
-        players: new Map([[p1, createMinimalPlayer(p1, { hand: [card1] })]]),
+        players: new Map([[p1, createMinimalPlayer({ hand: [card1] })]]),
         turnPlayer: p1,
       });
 
@@ -61,7 +60,7 @@ describe('Zone Management', () => {
           [card2, createCard(card2, p1, 'Card 2')],
           [card3, createCard(card3, p1, 'Card 3')],
         ]),
-        players: new Map([[p1, createMinimalPlayer(p1, { deck: [card1, card2, card3] })]]),
+        players: new Map([[p1, createMinimalPlayer({ deck: [card1, card2, card3] })]]),
         turnPlayer: p1,
       });
 
@@ -78,7 +77,7 @@ describe('Zone Management', () => {
       const p1 = playerId('p1');
       const state = createMinimalGameState({
         cards: new Map(),
-        players: new Map([[p1, createMinimalPlayer(p1)]]),
+        players: new Map([[p1, createMinimalPlayer()]]),
         turnPlayer: p1,
       });
 
@@ -140,7 +139,7 @@ describe('Zone Management', () => {
 
       const state = createMinimalGameState({
         cards: new Map([[card1, createCard(card1, p1, 'Test Unit')]]),
-        players: new Map([[p1, createMinimalPlayer(p1, { deck: [card1] })]]),
+        players: new Map([[p1, createMinimalPlayer({ deck: [card1] })]]),
         turnPlayer: p1,
       });
 
@@ -171,7 +170,7 @@ describe('Zone Management', () => {
           [card1, createCard(card1, p1, 'Card 1')],
           [card2, createCard(card2, p1, 'Card 2')],
         ]),
-        players: new Map([[p1, createMinimalPlayer(p1, { hand: [card1], deck: [card2] })]]),
+        players: new Map([[p1, createMinimalPlayer({ hand: [card1], deck: [card2] })]]),
         turnPlayer: p1,
       });
 
@@ -197,7 +196,7 @@ describe('Zone Management', () => {
           [card1, createCard(card1, p1, 'Card 1')],
           [card2, createCard(card2, p1, 'Card 2')],
         ]),
-        players: new Map([[p1, createMinimalPlayer(p1, { hand: [card1], deck: [card2] })]]),
+        players: new Map([[p1, createMinimalPlayer({ hand: [card1], deck: [card2] })]]),
         turnPlayer: p1,
       });
 
@@ -224,7 +223,7 @@ describe('Zone Management', () => {
           [card1, createCard(card1, p1, 'Card 1')],
           [card2, createCard(card2, p1, 'Card 2')],
         ]),
-        players: new Map([[p1, createMinimalPlayer(p1, { hand: [card1], deck: [card2] })]]),
+        players: new Map([[p1, createMinimalPlayer({ hand: [card1], deck: [card2] })]]),
         turnPlayer: p1,
       });
 
@@ -247,7 +246,7 @@ describe('Zone Management', () => {
 
       const state = createMinimalGameState({
         cards: new Map([[card1, createCard(card1, p1, 'Test Unit')]]),
-        players: new Map([[p1, createMinimalPlayer(p1, { hand: [card1] })]]),
+        players: new Map([[p1, createMinimalPlayer({ hand: [card1] })]]),
         turnPlayer: p1,
       });
 
@@ -267,7 +266,7 @@ describe('Zone Management', () => {
 
       const state = createMinimalGameState({
         cards: new Map([[card1, createCard(card1, p1, 'Test Unit')]]),
-        players: new Map([[p1, createMinimalPlayer(p1, { deck: [card1] })]]),
+        players: new Map([[p1, createMinimalPlayer({ deck: [card1] })]]),
         turnPlayer: p1,
       });
 
@@ -286,7 +285,7 @@ describe('Zone Management', () => {
 
       const state = createMinimalGameState({
         cards: new Map([[unit1, createCard(unit1, p1, 'Test Unit')]]),
-        players: new Map([[p1, createMinimalPlayer(p1, { base: [unit1 as any] })]]),
+        players: new Map([[p1, createMinimalPlayer({ base: [unit1 as UnitId] })]]),
         turnPlayer: p1,
       });
 
@@ -296,7 +295,7 @@ describe('Zone Management', () => {
       if (isOk(result)) {
         const player = result.value.players.get(p1)!;
         expect(player.trash).toContain(unit1);
-        expect(player.base.has(unit1 as any)).toBe(false);
+        expect(player.base.has(unit1 as UnitId)).toBe(false);
       }
     });
 
@@ -306,7 +305,7 @@ describe('Zone Management', () => {
 
       const state = createMinimalGameState({
         cards: new Map([[card1, createCard(card1, p1, 'Test Unit')]]),
-        players: new Map([[p1, createMinimalPlayer(p1, { hand: [card1] })]]),
+        players: new Map([[p1, createMinimalPlayer({ hand: [card1] })]]),
         turnPlayer: p1,
       });
 
@@ -325,7 +324,7 @@ describe('Zone Management', () => {
 
       const state = createMinimalGameState({
         cards: new Map([[card1, createCard(card1, p1, 'Test Unit')]]),
-        players: new Map([[p1, createMinimalPlayer(p1, { hand: [card1] })]]),
+        players: new Map([[p1, createMinimalPlayer({ hand: [card1] })]]),
         turnPlayer: p1,
       });
 
